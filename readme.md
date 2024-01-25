@@ -18,13 +18,22 @@ Import the module to your configuration, then enable with:
 }
 ```
 
+Then rebuild your config, restart your shell, and run:
+
+```bash
+$ docker info
+```
+
+It should connect and print relevant info.
+
 See the module code for more options.
 
-Tip: if you have a NixOS config for docker, you shold be able to do something like this:
+Tip: if you have a NixOS config for docker, you should be able to do something like this:
 
 -   in linux.nix
 
 ```nix
+{ ... }:
 {
   virtualisation.docker = {
     enable = true;
@@ -48,13 +57,14 @@ Tip: if you have a NixOS config for docker, you shold be able to do something li
 
   virtualisation.docker = {
     enable = true;
-    config = import ./linux.nix;
+    config = (import ./linux.nix);
   };
 }
 ```
 
 ## Notes
 
+-   why? because if you're already using nix-darwin, then this VM will be very lightweight in terms of disk space and very fast to start
 -   this builds on top of `nix-builder` module and `darwin-builder` VM
 -   it runs as a daemon in the background
 -   docker is exposed on `tcp://127.0.0.1:2375` on the host system
