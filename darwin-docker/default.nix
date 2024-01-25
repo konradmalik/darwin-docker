@@ -1,42 +1,30 @@
 { config, lib, pkgs, ... }:
 
-with lib;
-
 let
   cfg = config.virtualisation.docker;
-  name = "darwin-docker";
+
+  vmName = "darwin-docker";
+  hostSshPort = 31023;
+
   dockerPort = cfg.dockerPort;
+  linux-builder = cfg.package;
 
-  builderWithOverrides = cfg.package.override
-    {
-      modules = [
-        ({
-          # to not conflict with docker-builder
-          virtualisation.darwin-builder.hostPort = 31023;
-        })
+  dockerConfig = import ./config.nix { name = vmName; inherit dockerPort; };
+  buildDaemonizedVM = pkgs.callPackage ../buildDaemonizedVM.nix { inherit linux-builder; };
 
-        (import ./config.nix { inherit dockerPort name; })
-
-        cfg.config
-      ];
-    };
-
-  # create-builder uses TMPDIR to share files with the builder, notably certs.
-  # macOS will clean up files in /tmp automatically that haven't been accessed in 3+ days.
-  # If we let it use /tmp, leaving the computer asleep for 3 days makes the certs vanish.
-  # So we'll use /run/org.nixos.darwin-docker instead and clean it up ourselves.
-  script = pkgs.writeShellScript "${name}-start" ''
-    export TMPDIR=/run/org.nixos.${name} USE_TMPDIR=1
-    rm -rf $TMPDIR
-    mkdir -p $TMPDIR
-    trap "rm -rf $TMPDIR" EXIT
-    ${lib.optionalString cfg.ephemeral ''
-      rm -f ${cfg.workingDirectory}/${builderWithOverrides.nixosConfig.networking.hostName}.qcow2
-    ''}
-    ${builderWithOverrides}/bin/create-builder
-  '';
+  vm = buildDaemonizedVM {
+    inherit vmName hostSshPort;
+    inherit (cfg) workingDirectory ephemeral;
+    modules = [
+      dockerConfig
+      cfg.config
+    ];
+  };
+  dockerHostVariable = {
+    environment.variables.DOCKER_HOST = "tcp://127.0.0.1:${dockerPort}";
+  };
 in
-
+with lib;
 {
   options.virtualisation.docker = {
     enable = mkEnableOption "enable Docker on darwin via a VM running in the background";
@@ -109,28 +97,5 @@ in
     '';
   };
 
-  config = mkIf cfg.enable {
-    system.activationScripts.preActivation.text = ''
-      mkdir -p ${cfg.workingDirectory}
-    '';
-
-    launchd.daemons.darwin-docker = {
-      serviceConfig = {
-        ProgramArguments = [
-          "/bin/sh"
-          "-c"
-          "/bin/wait4path /nix/store &amp;&amp; exec ${script}"
-        ];
-        KeepAlive = true;
-        RunAtLoad = true;
-        WorkingDirectory = cfg.workingDirectory;
-      };
-    };
-
-    environment = {
-      variables = {
-        DOCKER_HOST = "tcp://127.0.0.1:${dockerPort}";
-      };
-    };
-  };
+  config = mkIf cfg.enable vm // (mkIf cfg.dockerHostVariable dockerHostVariable);
 }

@@ -2,6 +2,6 @@
   description = "Docker module for nix-darwin";
 
   outputs = { ... }: {
-    darwinModules.docker = import ./module.nix;
+    darwinModules.docker = import ./darwin-docker;
   };
 }
