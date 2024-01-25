@@ -33,7 +33,6 @@ Tip: if you have a NixOS config for docker, you should be able to do something l
 -   in linux.nix
 
 ```nix
-{ ... }:
 {
   virtualisation.docker = {
     enable = true;
@@ -57,7 +56,7 @@ Tip: if you have a NixOS config for docker, you should be able to do something l
 
   virtualisation.docker = {
     enable = true;
-    config = (import ./linux.nix);
+    config = import ./linux.nix;
   };
 }
 ```

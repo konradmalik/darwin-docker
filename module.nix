@@ -38,7 +38,7 @@ let
 in
 
 {
-  options.docker = {
+  options.virtualisation.docker = {
     enable = mkEnableOption "enable Docker on darwin via a VM running in the background";
 
     package = mkOption {
