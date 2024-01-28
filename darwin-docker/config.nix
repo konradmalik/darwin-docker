@@ -2,7 +2,6 @@
 {
   system = {
     inherit name;
-    stateVersion = "24.05";
   };
 
   users.users.builder = {
