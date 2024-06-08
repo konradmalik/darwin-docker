@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.virtualisation.docker;
@@ -9,7 +14,10 @@ let
   dockerPort = cfg.dockerPort;
   linux-builder = cfg.package;
 
-  dockerConfig = import ./config.nix { name = vmName; inherit dockerPort; };
+  dockerConfig = import ./config.nix {
+    name = vmName;
+    inherit dockerPort;
+  };
   buildDaemonizedVM = pkgs.callPackage ../buildDaemonizedVM.nix { inherit linux-builder; };
 
   vm = buildDaemonizedVM {

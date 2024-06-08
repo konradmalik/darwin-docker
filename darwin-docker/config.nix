@@ -16,7 +16,11 @@
       };
     };
     forwardPorts = [
-      { from = "host"; guest.port = dockerPort; host.port = dockerPort; }
+      {
+        from = "host";
+        guest.port = dockerPort;
+        host.port = dockerPort;
+      }
     ];
   };
   networking.firewall.allowedTCPPorts = [ dockerPort ];

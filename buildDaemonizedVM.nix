@@ -1,16 +1,25 @@
-{ lib, writeShellScript, linux-builder }:
-{ vmName, modules, workingDirectory, hostSshPort, ephemeral }:
+{
+  lib,
+  writeShellScript,
+  linux-builder,
+}:
+{
+  vmName,
+  modules,
+  workingDirectory,
+  hostSshPort,
+  ephemeral,
+}:
 
 let
-  builderWithOverrides = linux-builder.override
-    {
-      modules = [
-        ({
-          # to not conflict with docker-builder
-          virtualisation.darwin-builder.hostPort = hostSshPort;
-        })
-      ] ++ modules;
-    };
+  builderWithOverrides = linux-builder.override {
+    modules = [
+      {
+        # to not conflict with docker-builder
+        virtualisation.darwin-builder.hostPort = hostSshPort;
+      }
+    ] ++ modules;
+  };
 
   # create-builder uses TMPDIR to share files with the builder, notably certs.
   # macOS will clean up files in /tmp automatically that haven't been accessed in 3+ days.
