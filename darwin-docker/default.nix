@@ -1,51 +1,16 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}:
+{ config, lib, ... }:
 
 let
   cfg = config.virtualisation.docker;
-
-  vmName = "darwin-docker";
-  hostSshPort = 31023;
-
   dockerPort = cfg.dockerPort;
-  linux-builder = cfg.package;
-
-  dockerConfig = import ./config.nix {
-    name = vmName;
-    inherit dockerPort;
-  };
-  buildDaemonizedVM = pkgs.callPackage ../buildDaemonizedVM.nix { inherit linux-builder; };
-
-  vm = buildDaemonizedVM {
-    inherit vmName hostSshPort;
-    inherit (cfg) workingDirectory ephemeral;
-    modules = [
-      dockerConfig
-      cfg.config
-    ];
-  };
-  dockerHostVariable = {
-    environment.variables.DOCKER_HOST = "tcp://127.0.0.1:${dockerPort}";
-  };
+  builderWithOverrides = config.nix.linux-builder.package.override (previousArguments: {
+    modules = previousArguments.modules ++ [ (import ./config.nix { inherit dockerPort; }) ];
+  });
 in
 with lib;
 {
   options.virtualisation.docker = {
-    enable = mkEnableOption "enable Docker on darwin via a VM running in the background";
-
-    package = mkOption {
-      type = types.package;
-      default = pkgs.darwin.linux-builder;
-      defaultText = "pkgs.darwin.linux-builder";
-      description = ''
-        This option specifies the Linux builder to use.
-        Linux builder is the underlying VM on which Darwin docker builds.
-      '';
-    };
+    enable = mkEnableOption "enable Docker on darwin via linux-builder VM running in the background";
 
     dockerPort = mkOption {
       type = types.number;
@@ -82,28 +47,25 @@ with lib;
       '';
     };
 
-    workingDirectory = mkOption {
-      type = types.str;
-      default = "/var/lib/${name}";
-      description = ''
-        The working directory of the darwin-docker daemon process.
-      '';
-    };
-
     dockerHostVariable = mkEnableOption {
       default = true;
       description = ''
         set DOCKER_HOST="tcp://127.0.0.1:${dockerPort}" for all shell sessions
       '';
     };
-
-    ephemeral = mkEnableOption ''
-      wipe the VM's filesystem on every restart.
-
-      This is disabled by default as maintaining the VM's filesystem keeps all docker images
-      etc. from downloading each time the VM is started.
-    '';
   };
 
-  config = mkIf cfg.enable vm // (mkIf cfg.dockerHostVariable dockerHostVariable);
+  config =
+    mkIf cfg.enable {
+      nix = {
+        linux-builder = {
+          enable = true;
+          config = cfg.config;
+          package = builderWithOverrides;
+        };
+      };
+    }
+    // (mkIf cfg.dockerHostVariable {
+      environment.variables.DOCKER_HOST = "tcp://127.0.0.1:${dockerPort}";
+    });
 }

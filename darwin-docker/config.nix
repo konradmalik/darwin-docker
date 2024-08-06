@@ -1,9 +1,5 @@
-{ dockerPort, name }:
+{ dockerPort }:
 {
-  system = {
-    inherit name;
-  };
-
   users.users.builder = {
     extraGroups = [ "docker" ];
   };
