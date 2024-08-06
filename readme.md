@@ -5,9 +5,6 @@
 You may need to enable to `linux-builder` without this addon first (`nix.linux-builder.enable = true`).
 This is because you need some machine to build linux configuration on darwin.
 
-Also, if you have some custom config for you `linux-builder` it will conflict with config set with `darwin-docker`.
-I may solve this problem soon here.
-
 ## Usage
 
 Import the module to your configuration, then enable with:

@@ -3,8 +3,12 @@
 let
   cfg = config.virtualisation.docker;
   dockerPort = cfg.dockerPort;
+  dockerModules = [
+    (import ./config.nix { inherit dockerPort; })
+    cfg.config
+  ];
   builderWithOverrides = config.nix.linux-builder.package.override (previousArguments: {
-    modules = previousArguments.modules ++ [ (import ./config.nix { inherit dockerPort; }) ];
+    modules = previousArguments.modules ++ dockerModules;
   });
 in
 with lib;
@@ -60,7 +64,6 @@ with lib;
       nix = {
         linux-builder = {
           enable = true;
-          config = cfg.config;
           package = builderWithOverrides;
         };
       };
