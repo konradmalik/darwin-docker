@@ -1,5 +1,10 @@
 # Docker module for nix-darwin
 
+## Important!
+
+For some reason this does not work anymore for me. The VM does not start at all when I enable docker.
+Maybe I'll fix it someday, but it's hard to debug. For now I just use [lima](https://github.com/lima-vm/lima) for docker on Mac and start it on-demand.
+
 ## Before enable
 
 You may need to enable to `linux-builder` without this addon first (`nix.linux-builder.enable = true`).
